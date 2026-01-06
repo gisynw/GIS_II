@@ -1,4 +1,4 @@
-# [Welcome to GIS I (CARTOGRAPHY)](https://gisynw.github.io/geog386/)
+# [Welcome to GIS II (CARTOGRAPHY)](https://github.com/gisynw/GIS_II)
 
 ![LinkedIn Badge](https://img.shields.io/github/repo-size/gisynw/geog386)
    

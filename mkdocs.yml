@@ -1,12 +1,12 @@
 site_name: Yanan Wu Teaching GIS
 site_description: Yanan Wu Teaching GIS
 site_author: Yanan Wu
-site_url: https://gisynw.github.io/GIS_I/
+site_url: https://github.com/gisynw/GIS_II/
 copyright: "Copyright &copy; 2024 - 2025 Yanan Wu"
 
 # Repository
 repo_name: gisynw/GIS_I
-repo_url: https://gisynw.github.io/GIS_I.git
+repo_url: https://gisynw.github.io/GIS_II.git
 
 # Configuration
 theme:
