@@ -1,0 +1,57 @@
+{
+  "EsriClassifierDefinitionFile" : 0,
+  "FileVersion" : 3,
+  "NumberDefinitions" : 1,
+  "Definitions" : [
+    {
+      "Classifier" : "RandomTrees",
+      "NumberClasses" : 3,
+      "RasterIsSegmented" : false,
+      "NumberBands" : 6,
+      "Classes" : [
+        {
+          "ClassValue" : 10,
+          "ClassName" : "Water",
+          "Red" : 84,
+          "Green" : 117,
+          "Blue" : 168
+        },
+        {
+          "ClassValue" : 20,
+          "ClassName" : "Developed",
+          "Red" : 232,
+          "Green" : 209,
+          "Blue" : 209
+        },
+        {
+          "ClassValue" : 30,
+          "ClassName" : "Vegatition",
+          "Red" : 0,
+          "Green" : 115,
+          "Blue" : 76
+        }
+      ],
+      "TrainingSampleFile" : "trainingsample",
+      "Raster1" : "Landsat8_Fairbanks_AL.tif",
+      "MaxNumTrees" : 50,
+      "MaxTreeDepth" : 30,
+      "MaxNumSamplesPerClass" : 1000,
+      "CrossValidationRate" : 1,
+      "NumberTrees" : 1,
+      "VariableImportance" : [
+        0,
+        0,
+        0.58139534537182291,
+        0.41860465462817714,
+        0,
+        0
+      ],
+      "SizeOfByteArray" : 471,
+      "MaxStringSizeUsed" : 1024,
+      "NumberOfStrings" : 1,
+      "ByteArrayAsArrayOfStrings" : [
+        "H4sIAAAAAAAACrVS24rbMBB9D-Qf5mXfHGPJdmLrre_tB5RSxERWUoFseUdy2FD678WXCJN02e2WChk8c-Z2jubp66cvnwVLs-1mt9ttN67XnbrI1koKpLUX2w0AnBy1GATkk2W8VBa9NyejSQCbnBckidYKOERTuaELAvaTw1EjH5wKw9o5VwqEpjPdWfZI2C4TAMDgtfQDkTtj0F5AdgNafJEKgz47MiPAyhtC-kzae-M6iUoNhOoqIEvXiY3uww8BPOa0ppMe297qOFbspMh5Ly9oTYNhrHpytlmP0qEK5qJHUtF9tu6IduJpmpe1XpP5DbIEWAI8gTyBIoESvseIcO31EnJ32RI1SuhO_s9B9_eWM76etHjU1q8GWNDWeD_K74ejDxOcJq98S4ZzR6mJHEVxJ3Zt7yhgp2YGMamsWF6XOa9Go2DVPiv2Bb8r2c3bF1ciriIA7G4_Y5xrVsgjPp_lkeMzxXNBO2gBPK7EqjC185rPz8QfInxvTbjvvUwAP0cJRJ7A84DWhKvIeZ0W-8Oh4DWra86qKgGrRV2xOi3h1zsZsNcYZG8zyP61x_9Sia9UOvB01qUs6vTdsjy2_fDIf9-Dvd2DbTe_AWTSIbNpBQAA"
+      ]
+    }
+  ]
+}
