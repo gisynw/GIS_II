@@ -1,0 +1,200 @@
+{
+  "origin" : {
+    "x" : -2320020,
+    "y" : 3740000,
+    "spatialReference" : {
+      "wkt" : "PROJCS[\"Albers_Conic_Equal_Area\",GEOGCS[\"GCS_GRS_1980_IUGG_1980\",DATUM[\"D_unknown\",SPHEROID[\"GRS80\",6378137.0,298.257222101]],PRIMEM[\"Greenwich\",0.0],UNIT[\"Degree\",0.0174532925199433]],PROJECTION[\"Albers\"],PARAMETER[\"False_Easting\",0.0],PARAMETER[\"False_Northing\",0.0],PARAMETER[\"Central_Meridian\",-96.0],PARAMETER[\"Standard_Parallel_1\",50.0],PARAMETER[\"Standard_Parallel_2\",70.0],PARAMETER[\"Latitude_Of_Origin\",40.0],UNIT[\"Meter\",1.0]]"
+    }
+  },
+  "extent" : {
+    "xmin" : -2320020,
+    "ymin" : 3560000,
+    "xmax" : -2140020,
+    "ymax" : 3740000,
+    "spatialReference" : {
+      "wkt" : "PROJCS[\"Albers_Conic_Equal_Area\",GEOGCS[\"GCS_GRS_1980_IUGG_1980\",DATUM[\"D_unknown\",SPHEROID[\"GRS80\",6378137.0,298.257222101]],PRIMEM[\"Greenwich\",0.0],UNIT[\"Degree\",0.0174532925199433]],PROJECTION[\"Albers\"],PARAMETER[\"False_Easting\",0.0],PARAMETER[\"False_Northing\",0.0],PARAMETER[\"Central_Meridian\",-96.0],PARAMETER[\"Standard_Parallel_1\",50.0],PARAMETER[\"Standard_Parallel_2\",70.0],PARAMETER[\"Latitude_Of_Origin\",40.0],UNIT[\"Meter\",1.0]]"
+    }
+  },
+  "geodataXform" : {
+    "spatialReference" : {
+      "wkt" : "PROJCS[\"Albers_Conic_Equal_Area\",GEOGCS[\"GCS_GRS_1980_IUGG_1980\",DATUM[\"D_unknown\",SPHEROID[\"GRS80\",6378137.0,298.257222101]],PRIMEM[\"Greenwich\",0.0],UNIT[\"Degree\",0.0174532925199433]],PROJECTION[\"Albers\"],PARAMETER[\"False_Easting\",0.0],PARAMETER[\"False_Northing\",0.0],PARAMETER[\"Central_Meridian\",-96.0],PARAMETER[\"Standard_Parallel_1\",50.0],PARAMETER[\"Standard_Parallel_2\",70.0],PARAMETER[\"Latitude_Of_Origin\",40.0],UNIT[\"Meter\",1.0]]"
+    },
+    "type" : "IdentityXform"
+  },
+  "LODInfos" : {
+    "resolutions" : [
+      960,
+      480,
+      240,
+      120,
+      60,
+      30
+    ],
+    "levels" : [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "scales" : [
+      3628339.1999999997,
+      1814169.5999999999,
+      907084.79999999993,
+      453542.39999999997,
+      226771.19999999998,
+      113385.59999999999
+    ],
+    "dpi" : 96,
+    "type" : "RasterLODInfos"
+  },
+  "blockWidth" : 256,
+  "blockHeight" : 256,
+  "bandCount" : 1,
+  "pixelType" : 5,
+  "pixelSizeX" : 30,
+  "pixelSizeY" : 30,
+  "format" : "Cache/LERC2D",
+  "compressionType" : "LERC",
+  "firstPyramidLevel" : 1,
+  "maximumPyramidLevel" : 5,
+  "packetSize" : 16,
+  "compressionQuality" : 100000,
+  "pyramidResamplingType" : 0,
+  "LERCError" : 0.10000000000000001,
+  "properties" : {
+    "KIND" : "IMAGE",
+    "BAND_COUNT" : "1",
+    "HAS_TABLE" : "0",
+    "HAS_XFORM" : "0",
+    "BSQ" : "0",
+    "BandProperties" : [
+      {
+        "NoData" : "65535",
+        "type" : "PropertySet"
+      }
+    ],
+    "DataType" : "Thematic",
+    "ComputeChangeParameters" : {
+      "Method" : "2",
+      "type" : "PropertySet"
+    },
+    "type" : "PropertySet"
+  },
+  "statistics" : [
+    {
+      "min" : 0,
+      "max" : 90,
+      "mean" : 70.398686354435071,
+      "standardDeviation" : 33.452658312042672,
+      "sum" : 2520685015.0000081,
+      "median" : 90,
+      "mode" : 90,
+      "skipX" : 1,
+      "skipY" : 1,
+      "count" : 35805853
+    }
+  ],
+  "histograms" : [
+    {
+      "size" : 91,
+      "min" : -0.5,
+      "max" : 90.5,
+      "counts" : [
+        209445,
+        947337,
+        146792,
+        2096111,
+        58792,
+        665285,
+        3707,
+        3335,
+        12807,
+        315943,
+        507844,
+        62359,
+        60864,
+        9375,
+        95987,
+        155,
+        619,
+        8584,
+        477677,
+        447884,
+        214011,
+        257251,
+        27185,
+        460434,
+        1460,
+        10407,
+        10583,
+        53220,
+        318667,
+        529854,
+        72397,
+        14928,
+        26508,
+        212,
+        1046,
+        1342,
+        94862,
+        9710,
+        69575,
+        88186,
+        25880,
+        34066,
+        116,
+        796,
+        1076,
+        27184,
+        8351,
+        39588,
+        14769,
+        53490,
+        21712,
+        52,
+        6179,
+        49661,
+        251591,
+        46304,
+        444275,
+        26511,
+        180964,
+        9560,
+        294,
+        6620,
+        10308,
+        6231,
+        160,
+        1936,
+        390,
+        4257,
+        41,
+        1069,
+        1,
+        33,
+        1472,
+        527,
+        4733,
+        1340,
+        816,
+        1313,
+        9793,
+        0,
+        12080,
+        2391,
+        537,
+        6004,
+        1726,
+        1802,
+        47241,
+        7283,
+        17,
+        12441,
+        26028132
+      ]
+    }
+  ],
+  "type" : "RasterInfo"
+}
