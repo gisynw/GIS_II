@@ -10,3 +10,6 @@
 /docs/Lectures/Week13_CreatingCustom_Tools/Results
 **/*.gdb
 *.mpkx
+*.laz
+*.las
+*.lasd
