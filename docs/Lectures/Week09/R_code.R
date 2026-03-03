@@ -10,8 +10,10 @@ boston_sf <- st_as_sf(
   crs = 4326, remove = FALSE
 )
 
+map <- sf::st_read(system.file("shapes/boston_tracts.gpkg", package="spData")[1], quiet = TRUE)
+
 # Choose where to save (change this path if needed)
-output_path <- "E:\\ConwayTeaching\\GIS_II\\GIS_II_Github\\docs\\Lectures\\Week09boston_housing.shp"
+output_path <- "E:\\ConwayTeaching\\GIS_II\\GIS_II_Github\\docs\\Lectures\\Week09\\boston_housing.shp"
 
 # Write shapefile
-st_write(boston_sf, output_path, delete_layer = TRUE)
+st_write(map, output_path, delete_layer = TRUE)
