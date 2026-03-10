@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Spline Interpolation DEM Demo</title>
+  <style>
+    :root{
+      --bg:#f7f7fb;
+      --panel:#ffffff;
+      --text:#1f2937;
+      --muted:#6b7280;
+      --accent:#6d28d9;
+      --border:#d1d5db;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}
+    .wrap{max-width:1200px;margin:0 auto;padding:20px}
+    h1{margin:0 0 8px;color:var(--accent);font-size:2rem}
+    .sub{color:var(--muted);line-height:1.5;margin-bottom:16px}
+    .layout{display:grid;grid-template-columns:320px 1fr;gap:18px}
+    .panel{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:16px;box-shadow:0 8px 24px rgba(0,0,0,.04)}
+    .panel h2{margin:0 0 10px;font-size:1.08rem}
+    .small{color:var(--muted);font-size:.94rem;line-height:1.5}
+    button,input[type='range']{width:100%}
+    button{border:none;background:var(--accent);color:#fff;padding:10px 12px;border-radius:10px;font-weight:700;cursor:pointer;margin-top:10px}
+    button.secondary{background:#4b5563}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    label{display:block;font-weight:700;margin-bottom:6px}
+    .box{margin-top:14px;padding:12px;border:1px solid var(--border);border-radius:12px;background:#fafafa}
+    canvas{width:100%;height:auto;border:1px solid var(--border);border-radius:16px;display:block;background:#fff;cursor:grab}
+    canvas.dragging{cursor:grabbing}
+    .legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;color:var(--muted);font-size:.92rem}
+    .dot{width:12px;height:12px;border-radius:50%;display:inline-block;margin-right:6px;vertical-align:middle}
+    code{background:#f3f4f6;padding:2px 6px;border-radius:6px}
+    @media (max-width:980px){.layout{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Spline Interpolation: From Stations to DEM</h1>
+    <div class="sub">
+      Drag the figure to <strong>rotate</strong> the 3D view. This demo shows how a few elevation stations on a hillside can be connected into a smooth spline-like surface to create a continuous <strong>DEM</strong>.
+    </div>
+
+    <div class="layout">
+      <div class="panel">
+        <h2>Controls</h2>
+
+        <label for="stageSlider">Step: <span id="stageLabel">1</span></label>
+        <input id="stageSlider" type="range" min="1" max="3" step="1" value="1" />
+        <div class="small">1 = hillside base, 2 = add elevation stations, 3 = generate smooth spline-like DEM surface.</div>
+
+        <label for="smoothSlider" style="margin-top:14px;">Surface smoothness: <span id="smoothLabel">0.65</span></label>
+        <input id="smoothSlider" type="range" min="0.2" max="1" step="0.05" value="0.65" />
+        <div class="small">Higher smoothness creates a gentler, more generalized surface.</div>
+
+        <label for="zoomSlider" style="margin-top:14px;">Zoom: <span id="zoomLabel">1.00</span></label>
+        <input id="zoomSlider" type="range" min="0.7" max="1.5" step="0.05" value="1.00" />
+        <div class="small">Drag on the figure to rotate. Use zoom if labels or surface feel too small.</div>
+
+        <div class="row">
+          <button id="playBtn">Play Process</button>
+          <button id="resetBtn" class="secondary">Reset View</button>
+        </div>
+
+        <div class="box">
+          <strong>What students should notice</strong>
+          <div class="small" id="stepText" style="margin-top:8px;">
+            Step 1 shows the hillside before sample measurements are added.
+          </div>
+        </div>
+
+        <div class="box">
+          <strong>Interaction</strong>
+          <div class="small" style="margin-top:8px;">
+            • Click and drag to rotate the 3D view.<br>
+            • Compare Step 2 and Step 3 from different angles.<br>
+            • Notice how the smooth surface passes exactly through the measured stations.
+          </div>
+        </div>
+
+        <div class="box">
+          <strong>Key idea</strong>
+          <div class="small" style="margin-top:8px;">
+            <code>Known elevation points → smooth surface → DEM</code>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <canvas id="canvas" width="860" height="580"></canvas>
+        <div class="legend">
+          <span><span class="dot" style="background:#8b5cf6"></span>Elevation stations</span>
+          <span><span class="dot" style="background:#10b981"></span>Smooth DEM surface</span>
+          <span><span class="dot" style="background:#60a5fa"></span>Hillside base</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const stageSlider = document.getElementById('stageSlider');
+    const stageLabel = document.getElementById('stageLabel');
+    const smoothSlider = document.getElementById('smoothSlider');
+    const smoothLabel = document.getElementById('smoothLabel');
+    const zoomSlider = document.getElementById('zoomSlider');
+    const zoomLabel = document.getElementById('zoomLabel');
+    const stepText = document.getElementById('stepText');
+    const playBtn = document.getElementById('playBtn');
+    const resetBtn = document.getElementById('resetBtn');
+
+    let playing = false;
+    let playTimer = null;
+    let yaw = -0.95;
+    let pitch = 0.68;
+    let zoom = 1.0;
+    let dragging = false;
+    let lastMouse = null;
+
+    const scene = {
+      originX: 440,
+      originY: 430,
+      scale: 72,
+      zScale: 1.05,
+      perspective: 620
+    };
+
+    const stations = [
+      { x: 0.9, y: 0.9, z: 55, label: 'A: 55 m' },
+      { x: 2.4, y: 1.4, z: 72, label: 'B: 72 m' },
+      { x: 3.8, y: 1.7, z: 88, label: 'C: 88 m' },
+      { x: 1.8, y: 3.7, z: 78, label: 'D: 78 m' },
+      { x: 3.7, y: 3.1, z: 102, label: 'E: 102 m' },
+      { x: 5.2, y: 4.2, z: 128, label: 'F: 128 m' }
+    ];
+
+    function stage(){ return Number(stageSlider.value); }
+    function smoothness(){ return Number(smoothSlider.value); }
+    function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+
+    function hillBase(x, y) {
+      return 28 + 8.5 * x + 6.2 * y + 7 * Math.sin((x + 0.6) * 0.9) - 5 * Math.cos((y + 0.8) * 0.9);
+    }
+
+    function dist2(x1, y1, x2, y2) {
+      const dx = x1 - x2, dy = y1 - y2;
+      return dx * dx + dy * dy;
+    }
+
+    function solveLinearSystem(A, b) {
+      const n = A.length;
+      const M = A.map((row, i) => [...row, b[i]]);
+
+      for (let col = 0; col < n; col++) {
+        let pivot = col;
+        for (let r = col + 1; r < n; r++) {
+          if (Math.abs(M[r][col]) > Math.abs(M[pivot][col])) pivot = r;
+        }
+        if (pivot !== col) [M[col], M[pivot]] = [M[pivot], M[col]];
+
+        const diag = M[col][col] || 1e-12;
+        for (let j = col; j <= n; j++) M[col][j] /= diag;
+
+        for (let r = 0; r < n; r++) {
+          if (r === col) continue;
+          const factor = M[r][col];
+          for (let j = col; j <= n; j++) M[r][j] -= factor * M[col][j];
+        }
+      }
+
+      return M.map(row => row[n]);
+    }
+
+    function phi(r, epsilon) {
+      // Gaussian RBF basis. Exact interpolation at station points.
+      return Math.exp(-Math.pow(epsilon * r, 2));
+    }
+
+    function buildRbfModel() {
+      const eps = 0.22 + (1 - smoothness()) * 0.45;
+      const n = stations.length;
+      const A = Array.from({ length: n }, () => Array(n).fill(0));
+      const b = stations.map(p => p.z);
+
+      for (let i = 0; i < n; i++) {
+        for (let j = 0; j < n; j++) {
+          const dx = stations[i].x - stations[j].x;
+          const dy = stations[i].y - stations[j].y;
+          const r = Math.hypot(dx, dy);
+          A[i][j] = phi(r, eps);
+        }
+      }
+
+      const weights = solveLinearSystem(A, b);
+      return { eps, weights };
+    }
+
+    function splineSurface(x, y) {
+      // Exact RBF interpolation so the green surface passes through every purple station point.
+      const model = buildRbfModel();
+      let z = 0;
+      for (let i = 0; i < stations.length; i++) {
+        const dx = x - stations[i].x;
+        const dy = y - stations[i].y;
+        const r = Math.hypot(dx, dy);
+        z += model.weights[i] * phi(r, model.eps);
+      }
+      return z;
+    }
+
+    function rotatePoint(x, y, z) {
+      const cy = Math.cos(yaw), sy = Math.sin(yaw);
+      const cp = Math.cos(pitch), sp = Math.sin(pitch);
+
+      const x1 = cy * x - sy * y;
+      const y1 = sy * x + cy * y;
+      const z1 = z;
+
+      const x2 = x1;
+      const y2 = cp * y1 - sp * z1;
+      const z2 = sp * y1 + cp * z1;
+
+      return { x: x2, y: y2, z: z2 };
+    }
+
+    function project(x, y, z) {
+      const cx = x - 3.0;
+      const cy = y - 2.5;
+      const cz = z * scene.zScale - 75;
+      const r = rotatePoint(cx, cy, cz / scene.scale);
+      const perspective = scene.perspective / (scene.perspective - r.z * scene.scale * 0.55);
+      return {
+        x: scene.originX + r.x * scene.scale * zoom * perspective,
+        y: scene.originY - r.y * scene.scale * zoom * perspective,
+        depth: r.z
+      };
+    }
+
+    function drawAxes() {
+      const origin = project(0, 0, 0);
+      const px = project(6.4, 0, 0);
+      const py = project(0, 5.5, 0);
+      const pz = project(0, 0, 140);
+      ctx.strokeStyle = '#94a3b8';
+      ctx.lineWidth = 1.6;
+      [px, py, pz].forEach(p => {
+        ctx.beginPath();
+        ctx.moveTo(origin.x, origin.y);
+        ctx.lineTo(p.x, p.y);
+        ctx.stroke();
+      });
+      ctx.fillStyle = '#64748b';
+      ctx.font = '13px Arial';
+      ctx.fillText('x', px.x + 6, px.y);
+      ctx.fillText('y', py.x - 10, py.y);
+      ctx.fillText('elevation', pz.x + 8, pz.y);
+    }
+
+    function surfaceQuads(useSpline) {
+      const quads = [];
+      const nx = 28, ny = 22;
+      for (let j = 0; j < ny; j++) {
+        for (let i = 0; i < nx; i++) {
+          const x0 = 6 * i / nx;
+          const y0 = 5 * j / ny;
+          const x1 = 6 * (i + 1) / nx;
+          const y1 = 5 * (j + 1) / ny;
+          const z00 = useSpline ? splineSurface(x0, y0) : hillBase(x0, y0);
+          const z10 = useSpline ? splineSurface(x1, y0) : hillBase(x1, y0);
+          const z11 = useSpline ? splineSurface(x1, y1) : hillBase(x1, y1);
+          const z01 = useSpline ? splineSurface(x0, y1) : hillBase(x0, y1);
+          const p00 = project(x0, y0, z00);
+          const p10 = project(x1, y0, z10);
+          const p11 = project(x1, y1, z11);
+          const p01 = project(x0, y1, z01);
+          const avgZ = (z00 + z10 + z11 + z01) / 4;
+          const avgDepth = (p00.depth + p10.depth + p11.depth + p01.depth) / 4;
+          quads.push({ p00, p10, p11, p01, avgZ, avgDepth, useSpline });
+        }
+      }
+      quads.sort((a, b) => a.avgDepth - b.avgDepth);
+      return quads;
+    }
+
+    function drawQuads(quads) {
+      for (const q of quads) {
+        const t = clamp((q.avgZ - 35) / 95, 0, 1);
+        let fill;
+        if (q.useSpline) {
+          const hue = 155 - 85 * t;
+          const light = 72 - 18 * t;
+          fill = `hsla(${hue}, 52%, ${light}%, 0.78)`;
+          ctx.strokeStyle = 'rgba(16,185,129,0.14)';
+        } else {
+          fill = `hsla(205, 80%, ${84 - 12 * t}%, 0.55)`;
+          ctx.strokeStyle = 'rgba(96,165,250,0.26)';
+        }
+        ctx.fillStyle = fill;
+        ctx.lineWidth = 0.6;
+        ctx.beginPath();
+        ctx.moveTo(q.p00.x, q.p00.y);
+        ctx.lineTo(q.p10.x, q.p10.y);
+        ctx.lineTo(q.p11.x, q.p11.y);
+        ctx.lineTo(q.p01.x, q.p01.y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+      }
+    }
+
+    function drawStations() {
+      const stationDraw = stations.map(s => {
+        const surfaceZ = stage() >= 3 ? splineSurface(s.x, s.y) : hillBase(s.x, s.y);
+        return {
+          s,
+          base: project(s.x, s.y, surfaceZ),
+          top: project(s.x, s.y, s.z)
+        };
+      }).sort((a, b) => a.top.depth - b.top.depth);
+
+      for (const item of stationDraw) {
+        const { s, base, top } = item;
+        const isOnSurface = stage() >= 3;
+
+        if (!isOnSurface) {
+          ctx.strokeStyle = 'rgba(239,68,68,0.55)';
+          ctx.lineWidth = 1.6;
+          ctx.beginPath();
+          ctx.moveTo(base.x, base.y);
+          ctx.lineTo(top.x, top.y);
+          ctx.stroke();
+        }
+
+        ctx.beginPath();
+        ctx.arc(top.x, top.y, 7, 0, Math.PI * 2);
+        ctx.fillStyle = '#8b5cf6';
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.8;
+        ctx.stroke();
+
+        if (isOnSurface) {
+          ctx.beginPath();
+          ctx.arc(top.x, top.y, 10, 0, Math.PI * 2);
+          ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+          ctx.lineWidth = 1.2;
+          ctx.stroke();
+        }
+
+        ctx.fillStyle = '#111827';
+        ctx.font = '13px Arial';
+        ctx.fillText(s.label, top.x + 10, top.y - 8);
+      }
+    }
+
+    function drawCallouts() {
+      ctx.fillStyle = '#111827';
+      ctx.font = '18px Arial';
+      ctx.fillText('3D hillside with elevation stations', 500, 56);
+      if (stage() >= 3) {
+        ctx.fillStyle = '#047857';
+        ctx.font = '16px Arial';
+        ctx.fillText('Smooth continuous surface (DEM)', 520, 82);
+      }
+    }
+
+    function updateStepText() {
+      if (stage() === 1) {
+        stepText.innerHTML = 'Step 1 shows the hillside before sample measurements are added.';
+      } else if (stage() === 2) {
+        stepText.innerHTML = 'Step 2 adds stations with known elevation values. These are discrete sample points.';
+      } else {
+        stepText.innerHTML = 'Step 3 generates a smooth spline-like surface that passes through the known elevation stations and creates a continuous DEM.';
+      }
+    }
+
+    function render() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawAxes();
+      drawQuads(surfaceQuads(false));
+      if (stage() >= 2) drawStations();
+      if (stage() >= 3) {
+        drawQuads(surfaceQuads(true));
+        drawStations();
+      }
+      drawCallouts();
+      updateStepText();
+      stageLabel.textContent = stageSlider.value;
+      smoothLabel.textContent = Number(smoothSlider.value).toFixed(2);
+      zoomLabel.textContent = Number(zoomSlider.value).toFixed(2);
+    }
+
+    stageSlider.addEventListener('input', render);
+    smoothSlider.addEventListener('input', render);
+    zoomSlider.addEventListener('input', () => {
+      zoom = Number(zoomSlider.value);
+      render();
+    });
+
+    playBtn.addEventListener('click', () => {
+      if (playing) {
+        clearInterval(playTimer);
+        playTimer = null;
+        playing = false;
+        playBtn.textContent = 'Play Process';
+        return;
+      }
+      playing = true;
+      playBtn.textContent = 'Pause';
+      let current = Number(stageSlider.value);
+      playTimer = setInterval(() => {
+        current += 1;
+        if (current > 3) {
+          clearInterval(playTimer);
+          playTimer = null;
+          playing = false;
+          playBtn.textContent = 'Play Process';
+          return;
+        }
+        stageSlider.value = current;
+        render();
+      }, 1200);
+    });
+
+    resetBtn.addEventListener('click', () => {
+      if (playTimer) clearInterval(playTimer);
+      playing = false;
+      playBtn.textContent = 'Play Process';
+      stageSlider.value = 1;
+      smoothSlider.value = 0.65;
+      zoomSlider.value = 1.00;
+      yaw = -0.95;
+      pitch = 0.68;
+      zoom = 1.0;
+      render();
+    });
+
+    function pointerPos(evt) {
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: (evt.clientX - rect.left) * (canvas.width / rect.width),
+        y: (evt.clientY - rect.top) * (canvas.height / rect.height)
+      };
+    }
+
+    canvas.addEventListener('mousedown', (e) => {
+      dragging = true;
+      canvas.classList.add('dragging');
+      lastMouse = pointerPos(e);
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!dragging) return;
+      const p = pointerPos(e);
+      const dx = p.x - lastMouse.x;
+      const dy = p.y - lastMouse.y;
+      yaw += dx * 0.01;
+      pitch = clamp(pitch - dy * 0.01, -1.2, 1.2);
+      lastMouse = p;
+      render();
+    });
+
+    window.addEventListener('mouseup', () => {
+      dragging = false;
+      canvas.classList.remove('dragging');
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+      dragging = false;
+      canvas.classList.remove('dragging');
+    });
+
+    render();
+  </script>
+</body>
+</html>

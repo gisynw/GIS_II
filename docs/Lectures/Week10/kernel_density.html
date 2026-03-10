@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simple Kernel Density Demo</title>
+  <style>
+    :root{
+      --bg:#f7f7fb;
+      --panel:#ffffff;
+      --text:#1f2937;
+      --muted:#6b7280;
+      --accent:#6d28d9;
+      --border:#d1d5db;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}
+    .wrap{max-width:1200px;margin:0 auto;padding:20px}
+    h1{margin:0 0 8px;color:var(--accent);font-size:2rem}
+    .sub{color:var(--muted);line-height:1.5;margin-bottom:16px}
+    .layout{display:grid;grid-template-columns:300px 1fr;gap:18px}
+    .panel{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:16px;box-shadow:0 8px 24px rgba(0,0,0,.04)}
+    label{display:block;font-weight:700;margin-bottom:6px}
+    input[type='range']{width:100%}
+    .small{color:var(--muted);font-size:.94rem;line-height:1.5}
+    .box{margin-top:14px;padding:12px;border:1px solid var(--border);border-radius:12px;background:#fafafa}
+    .twocanvas{display:grid;grid-template-columns:1fr 380px;gap:14px;align-items:start}
+    canvas{width:100%;height:auto;border:1px solid var(--border);border-radius:16px;background:#fff;display:block}
+    .legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;color:var(--muted);font-size:.92rem}
+    .swatch{width:18px;height:12px;display:inline-block;margin-right:6px;vertical-align:middle;border:1px solid #ccc}
+    code{background:#f3f4f6;padding:2px 6px;border-radius:6px}
+    @media (max-width:1100px){.twocanvas{grid-template-columns:1fr}.layout{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Simple Kernel Density Demo</h1>
+    <div class="sub">
+      This simplified demo uses only <strong>four points</strong>. The left panel shows a <strong>2D continuous density surface</strong>, and the right panel shows a <strong>3D kernel function</strong> that is highest at the center and decreases toward the boundary.
+    </div>
+
+    <div class="layout">
+      <div class="panel">
+        <label for="radiusSlider">Bandwidth / Search Radius: <span id="radiusLabel">70</span> px</label>
+        <input id="radiusSlider" type="range" min="25" max="140" step="5" value="70" />
+        <div class="small">Larger bandwidth creates a smoother, broader hotspot. Smaller bandwidth makes the hotspot more local.</div>
+
+        <label for="heightSlider" style="margin-top:14px;">3D Height Exaggeration: <span id="heightLabel">1.20</span></label>
+        <input id="heightSlider" type="range" min="0.5" max="2.5" step="0.1" value="1.2" />
+        <div class="small">Increase this to make the kernel hill taller in the 3D view.</div>
+
+        <div class="box">
+          <strong>What students should notice</strong>
+          <div class="small" style="margin-top:8px;">
+            • Each point spreads influence to nearby space.<br>
+            • Overlapping influence creates a stronger hotspot.<br>
+            • The kernel is highest at the point center and becomes smaller toward the edge.
+          </div>
+        </div>
+
+        <div class="box">
+          <strong>Key idea</strong>
+          <div class="small" style="margin-top:8px;">
+            <code>points → kernel spread → continuous hotspot surface</code>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="twocanvas">
+          <div>
+            <canvas id="canvas" width="760" height="520"></canvas>
+          </div>
+          <div>
+            <canvas id="profileCanvas" width="380" height="520"></canvas>
+          </div>
+        </div>
+        <div class="legend">
+          <span><span class="swatch" style="background:#dbeafe"></span>Low density</span>
+          <span><span class="swatch" style="background:#93c5fd"></span>Moderate density</span>
+          <span><span class="swatch" style="background:#fca5a5"></span>High density</span>
+          <span><span class="swatch" style="background:#ef4444"></span>Hotspot</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const profileCanvas = document.getElementById('profileCanvas');
+    const pctx = profileCanvas.getContext('2d');
+    const radiusSlider = document.getElementById('radiusSlider');
+    const radiusLabel = document.getElementById('radiusLabel');
+    const heightSlider = document.getElementById('heightSlider');
+    const heightLabel = document.getElementById('heightLabel');
+
+    const map = { x: 40, y: 40, w: 660, h: 420 };
+    const points = [
+      {x:180, y:170},
+      {x:260, y:160},
+      {x:430, y:280},
+      {x:520, y:220}
+    ];
+
+    function radius(){ return Number(radiusSlider.value); }
+    function heightEx(){ return Number(heightSlider.value); }
+    function kernelValue(d, h){
+      if (d > h) return 0;
+      const u = d / h;
+      return Math.exp(-3 * u * u);
+    }
+    function densityAt(x, y){
+      let sum = 0;
+      for (const p of points) {
+        const d = Math.hypot(x - p.x, y - p.y);
+        sum += kernelValue(d, radius());
+      }
+      return sum;
+    }
+
+    function drawBase(){
+      ctx.strokeStyle = '#d1d5db';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(map.x, map.y, map.w, map.h);
+      for (let x = map.x; x <= map.x + map.w; x += 40) {
+        ctx.beginPath();
+        ctx.moveTo(x, map.y);
+        ctx.lineTo(x, map.y + map.h);
+        ctx.strokeStyle = 'rgba(209,213,219,0.35)';
+        ctx.stroke();
+      }
+      for (let y = map.y; y <= map.y + map.h; y += 40) {
+        ctx.beginPath();
+        ctx.moveTo(map.x, y);
+        ctx.lineTo(map.x + map.w, y);
+        ctx.strokeStyle = 'rgba(209,213,219,0.35)';
+        ctx.stroke();
+      }
+    }
+
+    function drawDensitySurface(){
+      const cell = 10;
+      let maxDensity = 0;
+      const values = [];
+      for (let y = map.y; y < map.y + map.h; y += cell) {
+        for (let x = map.x; x < map.x + map.w; x += cell) {
+          const v = densityAt(x + cell / 2, y + cell / 2);
+          values.push({x, y, v});
+          if (v > maxDensity) maxDensity = v;
+        }
+      }
+      for (const item of values) {
+        const t = maxDensity === 0 ? 0 : item.v / maxDensity;
+        let color;
+        if (t < 0.15) color = `rgba(255,255,255,0)`;
+        else if (t < 0.35) color = `rgba(219,234,254,${0.35 + t * 0.2})`;
+        else if (t < 0.55) color = `rgba(147,197,253,${0.35 + t * 0.3})`;
+        else if (t < 0.75) color = `rgba(252,165,165,${0.35 + t * 0.35})`;
+        else color = `rgba(239,68,68,${0.4 + t * 0.45})`;
+        ctx.fillStyle = color;
+        ctx.fillRect(item.x, item.y, cell, cell);
+      }
+    }
+
+    function drawKernelCircles(){
+      for (const p of points) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, radius(), 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(107,114,128,0.18)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+    }
+
+    function drawPoints(){
+      for (const p of points) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 7, 0, Math.PI * 2);
+        ctx.fillStyle = '#6d28d9';
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 1.8;
+        ctx.stroke();
+      }
+    }
+
+    function drawTitle(){
+      ctx.fillStyle = '#111827';
+      ctx.font = '16px Arial';
+      ctx.fillText('2D continuous density surface from four points', 40, 24);
+    }
+
+    function drawProfile3D(){
+      const w = profileCanvas.width;
+      const h = profileCanvas.height;
+      pctx.clearRect(0,0,w,h);
+      pctx.fillStyle = '#fff';
+      pctx.fillRect(0,0,w,h);
+
+      const margin = {l:42, r:18, t:44, b:48};
+      const plotW = w - margin.l - margin.r;
+      const plotH = h - margin.t - margin.b;
+      const centerX = margin.l + plotW / 2;
+      const baseY = margin.t + plotH * 0.82;
+      const hRad = radius();
+      const ex = heightEx();
+
+      pctx.fillStyle = '#111827';
+      pctx.font = '16px Arial';
+      pctx.fillText('3D Kernel Function', 42, 24);
+
+      pctx.strokeStyle = '#94a3b8';
+      pctx.lineWidth = 1.4;
+      pctx.beginPath();
+      pctx.moveTo(margin.l, baseY);
+      pctx.lineTo(w - margin.r, baseY);
+      pctx.stroke();
+      pctx.beginPath();
+      pctx.moveTo(margin.l, baseY);
+      pctx.lineTo(margin.l, margin.t + 10);
+      pctx.stroke();
+
+      pctx.fillStyle = '#64748b';
+      pctx.font = '13px Arial';
+      pctx.fillText('distance', w - 72, baseY + 22);
+      pctx.fillText('density', margin.l - 8, margin.t + 2);
+
+      const maxHeight = plotH * 0.55 * ex;
+      const radiusPx = plotW * 0.34;
+      const profile = [];
+      for (let i = 0; i <= 120; i++) {
+        const x = -hRad + (2 * hRad * i / 120);
+        const d = Math.abs(x);
+        const kv = kernelValue(d, hRad);
+        const sx = centerX + (x / hRad) * radiusPx;
+        const sy = baseY - kv * maxHeight;
+        profile.push({sx, sy});
+      }
+
+      const offsetX = 34;
+      const offsetY = -22;
+      pctx.fillStyle = 'rgba(16,185,129,0.14)';
+      pctx.beginPath();
+      pctx.moveTo(profile[0].sx, baseY);
+      pctx.lineTo(profile[0].sx + offsetX, baseY + offsetY);
+      for (const pt of profile) pctx.lineTo(pt.sx + offsetX, pt.sy + offsetY);
+      pctx.lineTo(profile[profile.length - 1].sx, profile[profile.length - 1].sy);
+      pctx.closePath();
+      pctx.fill();
+
+      pctx.beginPath();
+      pctx.moveTo(profile[0].sx, baseY);
+      for (const pt of profile) pctx.lineTo(pt.sx, pt.sy);
+      pctx.lineTo(profile[profile.length - 1].sx, baseY);
+      pctx.closePath();
+      const g = pctx.createLinearGradient(0, margin.t, 0, baseY);
+      g.addColorStop(0, 'rgba(239,68,68,0.72)');
+      g.addColorStop(0.45, 'rgba(250,204,21,0.55)');
+      g.addColorStop(1, 'rgba(59,130,246,0.22)');
+      pctx.fillStyle = g;
+      pctx.fill();
+
+      pctx.strokeStyle = '#ef4444';
+      pctx.lineWidth = 2;
+      pctx.beginPath();
+      pctx.moveTo(profile[0].sx, baseY);
+      for (const pt of profile) pctx.lineTo(pt.sx, pt.sy);
+      pctx.stroke();
+
+      pctx.strokeStyle = 'rgba(109,40,217,0.4)';
+      pctx.setLineDash([6,5]);
+      pctx.beginPath();
+      pctx.moveTo(centerX, baseY);
+      pctx.lineTo(centerX, baseY - maxHeight - 10);
+      pctx.stroke();
+      pctx.setLineDash([]);
+
+      const leftB = centerX - radiusPx;
+      const rightB = centerX + radiusPx;
+      pctx.strokeStyle = 'rgba(107,114,128,0.45)';
+      pctx.beginPath();
+      pctx.moveTo(leftB, baseY - 8);
+      pctx.lineTo(leftB, baseY + 8);
+      pctx.moveTo(rightB, baseY - 8);
+      pctx.lineTo(rightB, baseY + 8);
+      pctx.stroke();
+
+      pctx.fillStyle = '#111827';
+      pctx.font = '12px Arial';
+      pctx.fillText('point center', centerX - 26, baseY - maxHeight - 16);
+      pctx.fillText('boundary', leftB - 22, baseY + 24);
+      pctx.fillText('boundary', rightB - 22, baseY + 24);
+      pctx.fillStyle = '#4b5563';
+      pctx.font = '13px Arial';
+      pctx.fillText('Highest at the center, then gradually decreases toward the boundary.', 24, h - 18);
+    }
+
+    function render(){
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      drawBase();
+      drawDensitySurface();
+      drawKernelCircles();
+      drawPoints();
+      drawTitle();
+      drawProfile3D();
+      radiusLabel.textContent = radiusSlider.value;
+      heightLabel.textContent = Number(heightSlider.value).toFixed(2);
+    }
+
+    radiusSlider.addEventListener('input', render);
+    heightSlider.addEventListener('input', render);
+    render();
+  </script>
+</body>
+</html>
