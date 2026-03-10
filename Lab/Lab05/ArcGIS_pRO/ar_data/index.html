@@ -1,0 +1,607 @@
+<!--
+Save as: index.html (GitHub Pages ready)
+
+Edits requested:
+- Removed: Useful links, Teaching Modules, FAQs, Submit a Question
+- Kept: Home, LiDAR Map, About, Projects, Data & Downloads
+- About + Data & Downloads reference USGS LiDAR Explorer (no separate “useful links” box)
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>UCA LiDAR Program | UCA Campus in 3D</title>
+
+  <!-- ArcGIS Maps SDK for JavaScript (AMD) -->
+  <link rel="stylesheet" href="https://js.arcgis.com/4.30/esri/themes/light/main.css" />
+  <script src="https://js.arcgis.com/4.30/"></script>
+
+  <style>
+    :root{
+      --navy:#163b67;
+      --navy-2:#0f2f55;
+      --ink:#0b1320;
+      --muted:#5b6677;
+      --bg:#f4f6f8;
+      --card:#ffffff;
+      --line:#e5e7eb;
+      --shadow: 0 10px 30px rgba(16,24,40,.12);
+      --shadow-soft: 0 6px 18px rgba(16,24,40,.10);
+      --radius: 14px;
+      --accent:#582c83;
+    }
+
+    *{box-sizing:border-box;}
+    html,body{height:100%; margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Liberation Sans", sans-serif; color:var(--ink); background:var(--bg);}
+
+    a{color:var(--navy); text-decoration:none;}
+    a:hover{text-decoration:underline;}
+    code{background:#f1f5f9; padding:2px 6px; border-radius:8px; border:1px solid var(--line);}
+
+    /* Header */
+    .topbar{ background: #516a84; color:#fff; padding: 18px 0; }
+    .container{ width: min(1100px, calc(100% - 48px)); margin: 0 auto; }
+    .topbar-row{ display:flex; align-items:center; justify-content:space-between; gap:16px; }
+    .brand{ display:flex; align-items:center; gap:12px; font-weight:700; letter-spacing:.2px; }
+    .brand-badge{
+      width:38px; height:38px; border-radius:8px; display:grid; place-items:center;
+      background: var(--accent); font-weight:900;
+      box-shadow: inset 0 -2px 0 rgba(255,255,255,.15);
+      user-select:none;
+    }
+    .brand small{ display:block; font-weight:500; opacity:.85; margin-top:2px; }
+    .toplink{ font-size:13px; opacity:.9; text-decoration:none; color:#fff; white-space:nowrap; }
+    .toplink:hover{ text-decoration:underline; }
+
+    .nav{ background:#fff; border-bottom:1px solid var(--line); position:sticky; top:0; z-index:50; }
+    .nav ul{
+      list-style:none; padding: 10px 0; margin:0;
+      display:flex; gap:22px; flex-wrap:wrap; justify-content:center;
+    }
+    .nav a{ color:var(--ink); text-decoration:none; font-weight:600; }
+    .nav a:hover{ color:var(--navy); text-decoration:underline; }
+
+    /* Hero */
+    .hero{ background: var(--navy); color:#fff; padding: 34px 0; text-align:center; }
+    .hero h1{ margin:0; font-size: clamp(28px, 3.2vw, 44px); letter-spacing:.2px; font-weight:700; }
+    .intro{ background:#e9eaec; padding: 22px 0; }
+    .intro p{
+      margin:0; text-align:center; color:#2f3a49; font-size: 16px; line-height:1.5;
+      max-width: 860px; margin-inline:auto;
+    }
+
+    /* Sections */
+    main{ padding: 28px 0 44px; }
+    .section{ margin-top: 28px; }
+    .section h2{ margin:0 0 10px; font-size:22px; font-weight:800; color: var(--ink); }
+    .section p{ margin:0 0 14px; color: var(--muted); line-height:1.6; max-width: 950px; }
+
+    .card{
+      background: var(--card);
+      border:1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-soft);
+      padding: 16px;
+    }
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 18px;
+      align-items:start;
+    }
+    .callout{
+      border-left: 4px solid var(--navy);
+      padding: 10px 12px;
+      background:#f8fafc;
+      border-radius: 10px;
+      color: var(--muted);
+      margin-top: 10px;
+    }
+
+    .pill{
+      display:inline-flex; align-items:center; gap:6px; font-size:12px;
+      padding: 6px 10px; border-radius: 999px; border:1px solid var(--line);
+      color: var(--muted); background:#fff;
+    }
+    .kpi{
+      display:flex; gap:10px; flex-wrap:wrap; margin-top: 10px;
+    }
+    .kpi .pill{ font-weight:600; }
+
+    /* Map card */
+    .map-card{
+      background: var(--card);
+      border:1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-soft);
+      overflow:hidden;
+      margin-top: 12px;
+    }
+    .map-card-header{
+      padding: 14px 16px;
+      border-bottom:1px solid var(--line);
+      display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+    }
+    .map-title{ font-weight:800; color: var(--ink); font-size:14px; letter-spacing:.2px; }
+    .map-subtitle{ font-size:12px; color: var(--muted); }
+
+    .controls{
+      display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:flex-end;
+    }
+    .btn{
+      appearance:none;
+      border:1px solid var(--line);
+      background:#fff;
+      color: var(--ink);
+      padding: 8px 10px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight:700;
+      cursor:pointer;
+      display:inline-flex;
+      gap:8px;
+      align-items:center;
+      transition: transform .06s ease, box-shadow .12s ease, border-color .12s ease, background .12s ease;
+      user-select:none;
+    }
+    .btn:hover{ border-color:#cfd6df; box-shadow: 0 6px 16px rgba(16,24,40,.10); }
+    .btn:active{ transform: translateY(1px); }
+    .btn.primary{ background: var(--navy); border-color: var(--navy); color:#fff; }
+    .btn.primary:hover{ background: var(--navy-2); border-color: var(--navy-2); }
+
+    #viewDiv{
+      width:100%;
+      height: min(560px, 68vh);
+      background:#0b1220;
+      position:relative;
+    }
+
+    .loading{
+      position:absolute; inset:0;
+      display:grid; place-items:center;
+      background: rgba(255,255,255,.75);
+      backdrop-filter: blur(2px);
+      z-index: 30;
+    }
+    .loading-box{
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px 14px;
+      box-shadow: var(--shadow);
+      display:flex; gap:10px; align-items:center;
+      max-width: 360px;
+    }
+    .spinner{
+      width:18px; height:18px;
+      border:2px solid #cfd6df;
+      border-top-color: var(--navy);
+      border-radius:999px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin{to{transform: rotate(360deg);}}
+
+    /* Floating options panel */
+    .panel{
+      position:absolute;
+      top: 14px;
+      right: 14px;
+      width: 300px;
+      max-width: calc(100% - 28px);
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      z-index: 25;
+    }
+    .panel.hidden{display:none;}
+    .panel-head{
+      padding: 12px;
+      display:flex; align-items:center; justify-content:space-between;
+      border-bottom:1px solid var(--line);
+      background: #fbfcfd;
+    }
+    .panel-head strong{font-size:13px;}
+    .iconbtn{
+      border:none; background:transparent;
+      cursor:pointer; padding:6px 8px;
+      border-radius: 10px; color: var(--muted); font-weight:900;
+    }
+    .iconbtn:hover{background:#f1f5f9; color: var(--ink);}
+    .panel-body{ padding: 12px; font-size: 13px; color: var(--muted); line-height:1.55; }
+    .panel-actions{ display:grid; gap:10px; margin-top: 12px; }
+    .row{ display:flex; gap:10px; flex-wrap:wrap; }
+    .row .btn{flex:1;}
+    .note{
+      margin-top: 10px;
+      font-size:12px;
+      color:#6b7280;
+      border-top:1px dashed var(--line);
+      padding-top:10px;
+    }
+
+    footer{
+      color:#fff;
+      background: var(--navy);
+      padding: 10px 0;
+      font-size: 12px;
+      text-align:center;
+    }
+
+    @media (max-width: 900px){
+      .grid{ grid-template-columns: 1fr; }
+      .controls{ justify-content:flex-start; }
+      .container{ width: calc(100% - 24px); }
+      #viewDiv{ height: 62vh; }
+      .panel{ width: 100%; right: 0; left: 0; margin: 0 auto; top: 0; border-radius: 0; }
+      .map-card{ border-radius: 0; }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Top brand bar -->
+  <div class="topbar">
+    <div class="container topbar-row">
+      <div class="brand">
+        <div class="brand-badge">UCA</div>
+        <div>
+          <div style="font-size:18px;">UCA LiDAR Program</div>
+          <small>Geography Department at University of Central Arkansas</small>
+        </div>
+      </div>
+      <a class="toplink" href="https://uca.edu/geography/" aria-label="Go to UCA Geography">⬆ Go to uca.edu.geogaphy</a>
+    </div>
+  </div>
+
+  <!-- Nav -->
+  <div class="nav">
+    <div class="container">
+      <ul>
+        <li><a href="#home">Home</a></li>
+        <li><a href="#lidar-map">LiDAR Map</a></li>
+        <li><a href="#about">About</a></li>
+        <li><a href="#projects">Projects</a></li>
+        <li><a href="#data">Data & Downloads</a></li>
+        <li><a href="#lead">Project Lead</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Hero -->
+  <section class="hero" id="home">
+    <div class="container">
+      <h1>Visualize UCA in 3D</h1>
+    </div>
+  </section>
+
+  <!-- Intro band -->
+  <section class="intro">
+    <div class="container">
+      <p>
+        Explore LiDAR point cloud products for the UCA campus. Use pan, tilt, and rotate to examine
+        terrain and structures in an interactive 3D scene.
+      </p>
+    </div>
+  </section>
+
+  <main>
+    <div class="container">
+
+      <!-- LiDAR Map -->
+      <section class="section" id="lidar-map">
+        <h2>Point Cloud Data Example</h2>
+        <p>
+          This interactive scene visualizes LiDAR point cloud data for the University of Central Arkansas campus.
+        </p>
+        <p> Points are symbolized by elevation: higher elevations appear warmer (red/yellow) and lower elevations appear cooler (blue/purple).</p>
+
+        <div class="map-card">
+          <div class="map-card-header">
+            <div>
+              <div class="map-title">UCA Point Cloud Scene Layer</div>
+              <div class="map-subtitle">ArcGIS Online Web Scene</div>
+            </div>
+
+            <div class="controls" aria-label="Scene controls">
+              <span class="pill" id="statusPill">Loading…</span>
+              <button class="btn primary" id="btnReset" type="button" title="Return to the initial camera view">⟲ Reset view</button>
+              <button class="btn" id="btnLegend" type="button" title="Show or hide the legend">☰ Legend</button>
+              <button class="btn" id="btnBasemap" type="button" title="Toggle basemap (Imagery / Topographic)">🗺 Basemap</button>
+              <button class="btn" id="btnPanel" type="button" title="Open scene options">⚙ Options</button>
+            </div>
+          </div>
+
+          <div id="viewDiv">
+            <div class="loading" id="loading">
+              <div class="loading-box">
+                <div class="spinner" aria-hidden="true"></div>
+                <div>
+                  <div style="font-weight:900; color:var(--ink);">Loading 3D scene…</div>
+                  <div style="font-size:12px; color:var(--muted);">If it takes long, verify the item is shared publicly.</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel hidden" id="panel">
+              <div class="panel-head">
+                <strong>Scene options</strong>
+                <button class="iconbtn" id="btnClosePanel" type="button" aria-label="Close options">✕</button>
+              </div>
+              <div class="panel-body">
+                <div><strong>Tips</strong>: Use right-drag (or Shift + drag) to tilt and rotate.</div>
+
+                <div class="panel-actions">
+                  <div class="row">
+                    <button class="btn" id="btnDepth" type="button" title="Toggle depth enhancement">✨ Depth</button>
+                    <button class="btn" id="btnGround" type="button" title="Toggle ground visibility">⛰ Ground</button>
+                  </div>
+                  <div class="row">
+                    <button class="btn" id="btnScreenshot" type="button" title="Download a screenshot of the scene">📷 Screenshot</button>
+                  </div>
+                </div>
+
+                <div class="note">
+                  If the scene is private, viewers may see an error. Share the Web Scene publicly (or to your org) in ArcGIS Online.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="kpi">
+          <span class="pill">Interactive 3D Web Scene</span>
+          <span class="pill">Elevation-based styling</span>
+          <span class="pill">Shareable (ArcGIS Online)</span>
+        </div>
+      </section>
+
+      <!-- About -->
+      <section class="section" id="about">
+        <h2>About</h2>
+        <div class="grid">
+          <div class="card">
+            <p>
+              The UCA LiDAR Program showcases 3D point cloud visualization for campus-scale exploration and teaching.
+              This site embeds an ArcGIS Online Web Scene to support interactive viewing and outreach.
+            </p>
+            <!-- <div class="callout">
+              <strong>Data source reference:</strong> USGS LiDAR Explorer is a primary entry point to discover LiDAR coverage and access point cloud products.
+            </div> -->
+          </div>
+          <!-- <div class="card">
+            <p>
+              This page is designed for GitHub Pages hosting and can be used as a lightweight public-facing viewer.
+              For the best public experience, ensure the Web Scene item is shared to <strong>Everyone (public)</strong>.
+            </p>
+            <div class="callout">
+              If you later want a “real” downloads page, you can add direct links to LAZ/LAS tiles, metadata PDFs, and lab handouts.
+            </div>
+          </div> -->
+        </div>
+      </section>
+
+      <!-- Projects -->
+      <section class="section" id="projects">
+        <h2>Projects</h2>
+        <div class="grid">
+          <div class="card">
+            <p><strong>Campus 3D Visualization</strong></p>
+            <p>
+              Use LiDAR point clouds to visualize campus features in 3D and support demonstrations in GIS, remote sensing,
+              and spatial analysis courses.
+            </p>
+          </div>
+          <!-- <div class="card">
+            <p><strong>LiDAR to Derived Products</strong></p>
+            <p>
+              Create DEM/DSM surfaces, extract building/vegetation structure, and publish web-ready layers for interactive viewing.
+            </p>
+          </div>
+        </div> -->
+      </section>
+
+      <!-- Data & Downloads -->
+      <section class="section" id="data">
+        <h2>Data & Downloads</h2>
+        <div class="grid">
+          <div class="card">
+            <p>
+              Discover and access LiDAR datasets via <a href="https://apps.nationalmap.gov/lidar-explorer/#/" target="_blank"><strong> USGS LiDAR Explorer</strong> </a> </strong>. It helps you find point cloud coverage
+              and download LiDAR products for your area of interest.
+            </p>
+            <p>
+            Access UCA Point Cloud Data: <a href="https://www.arcgis.com/home/webscene/viewer.html?webscene=77e3205b689c49c89e16474191147092" target="_blank" rel="noopener"><strong>Link</strong></a> 
+            </p>
+            <p style="margin-top:12px;">
+              <a class="btn primary" href="https://apps.nationalmap.gov/lidar-explorer/" target="_blank" rel="noopener" style="display:inline-flex;">
+                ⬇ Open USGS LiDAR Explorer
+              </a>
+            </p>
+          </div>
+        </div>
+      </section>
+
+            <!-- Data & Downloads -->
+      <section class="section" id="lead">
+        <h2>Project Lead</h2>
+        <div class="grid">
+          <div class="card">
+            <p>
+              Yanan Wu
+              <p>Assistant Professor of Geography at UCA. </p>
+              <a href="https://uca.edu/geography/facultystaff/yanan-wu-phd/" target="_blank"><strong> UCA Website</strong> </a> </strong> |
+               <a href="https://gisynw.github.io/" target="_blank"><strong> Personal Website</strong> </a> </strong>
+            </p>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <footer>
+    Data & discovery: USGS LiDAR Explorer | Visualization: ArcGIS Online Web Scene
+  </footer>
+
+  <script>
+    const WEBSCENE_ID = "77e3205b689c49c89e16474191147092";
+
+    // Smooth anchor scroll for nav
+    document.addEventListener("click", (e) => {
+      const a = e.target.closest('a[href^="#"]');
+      if (!a) return;
+      const id = a.getAttribute("href");
+      const el = document.querySelector(id);
+      if (!el) return;
+      e.preventDefault();
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+
+    // ArcGIS scene
+    require([
+      "esri/WebScene",
+      "esri/views/SceneView",
+      "esri/widgets/Legend",
+      "esri/widgets/Expand"
+    ], function(WebScene, SceneView, Legend, Expand) {
+
+      const statusPill = document.getElementById("statusPill");
+      const loadingEl = document.getElementById("loading");
+      const panel = document.getElementById("panel");
+
+      const webscene = new WebScene({
+        portalItem: { id: WEBSCENE_ID }
+      });
+
+      const view = new SceneView({
+        container: "viewDiv",
+        map: webscene,
+        qualityProfile: "high",
+        environment: {
+          atmosphereEnabled: true,
+          starsEnabled: false
+        }
+      });
+
+      const legend = new Legend({ view });
+      const legendExpand = new Expand({
+        view,
+        content: legend,
+        expanded: false,
+        mode: "floating",
+        expandIcon: "legend"
+      });
+      view.ui.add(legendExpand, "bottom-left");
+
+      let initialCamera = null;
+
+      function setStatus(text, tone="neutral"){
+        statusPill.textContent = text;
+        statusPill.style.borderColor = tone === "ok" ? "#cfe8d6" : tone === "warn" ? "#f7e3b2" : "var(--line)";
+        statusPill.style.background = tone === "ok" ? "#f0fbf4" : tone === "warn" ? "#fff7e6" : "#fff";
+        statusPill.style.color = tone === "ok" ? "#256f3a" : tone === "warn" ? "#8a5b00" : "var(--muted)";
+      }
+
+      // Main controls
+      document.getElementById("btnReset").addEventListener("click", async () => {
+        if (initialCamera) await view.goTo(initialCamera, { speedFactor: 0.9 });
+      });
+
+      document.getElementById("btnLegend").addEventListener("click", () => {
+        legendExpand.expanded = !legendExpand.expanded;
+      });
+
+      document.getElementById("btnBasemap").addEventListener("click", () => {
+        const currentId = (view.map.basemap && view.map.basemap.id) ? view.map.basemap.id : "";
+        view.map.basemap = (currentId === "satellite") ? "topo-vector" : "satellite";
+      });
+
+      document.getElementById("btnPanel").addEventListener("click", () => {
+        panel.classList.toggle("hidden");
+      });
+
+      document.getElementById("btnClosePanel").addEventListener("click", () => {
+        panel.classList.add("hidden");
+      });
+
+      // Options
+      let depthOn = false;
+      document.getElementById("btnDepth").addEventListener("click", () => {
+        try{
+          depthOn = !depthOn;
+          view.environment.lighting = view.environment.lighting || {};
+          view.environment.lighting.directShadowsEnabled = true;
+          view.environment.lighting.ambientOcclusionEnabled = depthOn;
+          setStatus(depthOn ? "Depth enhanced" : "Depth normal", "ok");
+        }catch(e){
+          setStatus("Depth not available", "warn");
+          console.warn(e);
+        }
+      });
+
+      let groundOn = true;
+      document.getElementById("btnGround").addEventListener("click", () => {
+        try{
+          groundOn = !groundOn;
+          view.map.ground = groundOn ? "world-elevation" : null;
+          setStatus(groundOn ? "Ground: on" : "Ground: off", "ok");
+        }catch(e){
+          setStatus("Cannot toggle ground", "warn");
+          console.warn(e);
+        }
+      });
+
+      document.getElementById("btnScreenshot").addEventListener("click", async () => {
+        try{
+          const shot = await view.takeScreenshot({ width: 1600 });
+          const a = document.createElement("a");
+          a.href = shot.dataUrl;
+          a.download = "uca-lidar-scene.png";
+          a.click();
+        }catch(e){
+          setStatus("Screenshot failed", "warn");
+          console.warn(e);
+        }
+      });
+
+      // Load lifecycle
+      setStatus("Loading…");
+      view.when(async () => {
+        loadingEl.style.display = "none";
+        initialCamera = view.camera.clone();
+        setStatus("Ready", "ok");
+      }).catch((err) => {
+        loadingEl.style.display = "none";
+        setStatus("Scene access issue", "warn");
+        console.error(err);
+
+        const msg = document.createElement("div");
+        msg.style.position = "absolute";
+        msg.style.inset = "0";
+        msg.style.display = "grid";
+        msg.style.placeItems = "center";
+        msg.style.background = "rgba(255,255,255,.92)";
+        msg.style.padding = "18px";
+        msg.innerHTML = `
+          <div style="max-width:680px; background:#fff; border:1px solid var(--line); border-radius:14px; box-shadow:var(--shadow); padding:16px;">
+            <div style="font-weight:900; color:var(--ink); font-size:16px;">Cannot load the Web Scene</div>
+            <div style="color:var(--muted); margin-top:8px; line-height:1.5; font-size:13px;">
+              This usually happens when the Web Scene is not shared publicly (or requires organizational access), or when the item is not available.
+              <br/><br/>
+              <strong>Fix:</strong> In ArcGIS Online, open the Web Scene item → <em>Share</em> → set to <em>Everyone (public)</em>, then refresh this page.
+            </div>
+            <div style="margin-top:10px; font-size:12px; color:#6b7280;">
+              Web Scene Item ID: <code>${WEBSCENE_ID}</code>
+            </div>
+          </div>
+        `;
+        document.getElementById("viewDiv").appendChild(msg);
+      });
+    });
+  </script>
+</body>
+</html>
